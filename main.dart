@@ -438,6 +438,7 @@ class CryptoChartScreen extends StatelessWidget {
 }
 
 // Placeholder dla innych ekranów
+
 class MetalsScreen extends StatefulWidget {
   @override
   _MetalsScreenState createState() => _MetalsScreenState();
@@ -458,27 +459,27 @@ class _MetalsScreenState extends State<MetalsScreen> {
   }
 
   Future<void> _fetchMetalPrices() async {
-    const String apiKey = 'goldapi-2ir2sm6cto6n3-io';
-    const String apiUrl = 'https://www.goldapi.io/api/XAU/USD';
+    const String apiKey = 'goldapi-jti2sm6dts0jo-io';
+    const String baseUrl = 'https://www.goldapi.io/api';
 
     try {
       final responseGold = await http.get(
-        Uri.parse(apiUrl),
+        Uri.parse('$baseUrl/XAU/USD'),
         headers: {'x-access-token': apiKey, 'Content-Type': 'application/json'},
       );
 
       final responseSilver = await http.get(
-        Uri.parse('https://www.goldapi.io/api/XAG/USD'),
+        Uri.parse('$baseUrl/XAG/USD'),
         headers: {'x-access-token': apiKey, 'Content-Type': 'application/json'},
       );
 
       final responsePlatinum = await http.get(
-        Uri.parse('https://www.goldapi.io/api/XPT/USD'),
+        Uri.parse('$baseUrl/XPT/USD'),
         headers: {'x-access-token': apiKey, 'Content-Type': 'application/json'},
       );
 
       final responsePalladium = await http.get(
-        Uri.parse('https://www.goldapi.io/api/XPD/USD'),
+        Uri.parse('$baseUrl/XPD/USD'),
         headers: {'x-access-token': apiKey, 'Content-Type': 'application/json'},
       );
 
@@ -501,15 +502,24 @@ class _MetalsScreenState extends State<MetalsScreen> {
           _isLoading = false;
         });
       } else {
-        setState(() {
-          _isLoading = false;
-        });
+        _handleApiError();
       }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
+      _handleApiError();
     }
+  }
+
+  void _handleApiError() {
+    setState(() {
+      _metalPrices = {};
+      _isLoading = false;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Nie udało się pobrać danych. Sprawdź API.'),
+        backgroundColor: Colors.red,
+      ),
+    );
   }
 
   @override
@@ -517,152 +527,165 @@ class _MetalsScreenState extends State<MetalsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Kurs Metali Szlachetnych',
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          'Kurs Metali Szlachetnych za 1 oz',
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.2,
+          ),
         ),
         centerTitle: true,
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator(color: Colors.amber))
-          : Center(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.all(16),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Wrap(
-                      spacing: 16,
-                      runSpacing: 16,
-                      alignment: WrapAlignment.center,
-                      children: _metalPrices.entries.map((entry) {
-                        return Container(
-                          width: 120,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[900],
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black54,
-                                blurRadius: 4,
-                                offset: Offset(2, 2),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                entry.key,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              SizedBox(height: 6),
-                              Text(
-                                '\$${entry.value.toStringAsFixed(2)}',
-                                style: TextStyle(
-                                  color: Colors.amber,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                    SizedBox(height: 24),
-                    Divider(color: Colors.grey),
-                    SizedBox(height: 16),
-                    Text(
-                      'Przelicz wartość metalu',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.amber,
+          : _metalPrices.isEmpty
+          ? Center(
+        child: Text(
+          'Brak danych do wyświetlenia.',
+          style: TextStyle(color: Colors.white, fontSize: 18),
+        ),
+      )
+          : SingleChildScrollView(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Wrap(
+              spacing: 16,
+              runSpacing: 16,
+              alignment: WrapAlignment.center,
+              children: _metalPrices.entries.map((entry) {
+                return Container(
+                  width: 120,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[900],
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black54,
+                        blurRadius: 4,
+                        offset: Offset(2, 2),
                       ),
-                    ),
-                    SizedBox(height: 16),
-                    DropdownButton<String>(
-                      value: _selectedMetal,
-                      isExpanded: true,
-                      alignment: Alignment.center,
-                      items: _metalPrices.keys.map((metal) {
-                        return DropdownMenuItem(
-                          value: metal,
-                          child: Center(child: Text(metal)),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedMetal = value!;
-                        });
-                      },
-                    ),
-                    SizedBox(height: 16),
-                    TextField(
-                      controller: _gramsController,
-                      keyboardType: TextInputType.number,
-                      textAlign: TextAlign.center,
-                      decoration: InputDecoration(
-                        labelText: 'Wprowadź ilość gramów',
-                        labelStyle: TextStyle(fontSize: 16),
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.scale),
-                        contentPadding: EdgeInsets.symmetric(vertical: 12),
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () {
-                        final grams = double.tryParse(_gramsController.text) ?? 0.0;
-                        final pricePerOunce = _metalPrices[_selectedMetal] ?? 0.0;
-                        final pricePerGram = pricePerOunce / 31.1035;
-                        setState(() {
-                          _calculatedValue = grams * pricePerGram;
-                        });
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.amber,
-                        padding: EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: Text(
-                        'PRZELICZ',
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        entry.key,
                         style: TextStyle(
-                          fontSize: 18,
+                          color: Colors.white,
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black,
                         ),
                       ),
-                    ),
-                    SizedBox(height: 16),
-                    Text(
-                      'Wartość: \$${_calculatedValue.toStringAsFixed(2)}',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                      SizedBox(height: 6),
+                      Text(
+                        '\$${entry.value.toStringAsFixed(2)}',
+                        style: TextStyle(
+                          color: Colors.amber,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+            SizedBox(height: 24),
+            Divider(color: Colors.grey),
+            SizedBox(height: 16),
+            Text(
+              'Przelicz wartość metalu',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.amber,
+              ),
+            ),
+            SizedBox(height: 16),
+            DropdownButton<String>(
+              value: _selectedMetal,
+              isExpanded: true,
+              alignment: Alignment.center,
+              items: _metalPrices.keys.map((metal) {
+                return DropdownMenuItem(
+                  value: metal,
+                  child: Center(child: Text(metal)),
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedMetal = value!;
+                });
+              },
+            ),
+            SizedBox(height: 16),
+            TextField(
+              controller: _gramsController,
+              keyboardType: TextInputType.number,
+              textAlign: TextAlign.center,
+              decoration: InputDecoration(
+                labelText: 'Wprowadź ilość gramów',
+                labelStyle: TextStyle(fontSize: 16),
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.scale),
+                contentPadding: EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
+            SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                final grams =
+                    double.tryParse(_gramsController.text) ?? 0.0;
+                final pricePerOunce =
+                    _metalPrices[_selectedMetal] ?? 0.0;
+                final pricePerGram = pricePerOunce / 31.1035;
+                setState(() {
+                  _calculatedValue = grams * pricePerGram;
+                });
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.amber,
+                padding: EdgeInsets.symmetric(
+                    vertical: 16, horizontal: 24),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(
+                'PRZELICZ',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
                 ),
               ),
             ),
+            SizedBox(height: 16),
+            Text(
+              'Wartość: \$${_calculatedValue.toStringAsFixed(2)}',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
 
 class CurrencyConverterScreen extends StatefulWidget {
   @override
-  _CurrencyConverterScreenState createState() => _CurrencyConverterScreenState();
+  _CurrencyConverterScreenState createState() =>
+      _CurrencyConverterScreenState();
 }
 
 class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
@@ -675,8 +698,26 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
 
   // Lista dostępnych walut
   List<String> currencies = [
-    'USD', 'EUR', 'GBP', 'AUD', 'CAD', 'CHF', 'JPY', 'CNY', 'INR', 'MXN',
-    'BRL', 'SEK', 'NZD', 'SGD', 'PLN', 'KRW', 'ZAR', 'TRY', 'CZK', 'HKD'
+    'USD',
+    'EUR',
+    'GBP',
+    'AUD',
+    'CAD',
+    'CHF',
+    'JPY',
+    'CNY',
+    'INR',
+    'MXN',
+    'BRL',
+    'SEK',
+    'NZD',
+    'SGD',
+    'PLN',
+    'KRW',
+    'ZAR',
+    'TRY',
+    'CZK',
+    'HKD'
   ];
 
   // Lista wybranych walut do wyświetlenia na dole
@@ -689,7 +730,8 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
   }
 
   Future<void> _fetchExchangeRates() async {
-    const String apiUrl = 'https://api.frankfurter.app/latest?from=PLN'; // Pobieramy kursy względem PLN
+    const String apiUrl =
+        'https://api.frankfurter.app/latest?from=PLN'; // Pobieramy kursy względem PLN
     try {
       final response = await http.get(Uri.parse(apiUrl));
 
@@ -738,68 +780,124 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Wybór kwoty do przeliczenia
+            // Wyśrodkowany napis "Kwota" nad polem tekstowym
+            Text(
+              'Kwota',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 8),
+            // Pole tekstowe na kwotę (wyśrodkowane)
             TextField(
               controller: _amountController,
               keyboardType: TextInputType.number,
-              style: TextStyle(color: Colors.white),
+              textAlign: TextAlign.center, // Wartości wpisywane na środku
+              style: TextStyle(color: Colors.white, fontSize: 20),
               decoration: InputDecoration(
-                labelText: 'Kwota',
-                labelStyle: TextStyle(color: Colors.white),
                 border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
+            SizedBox(height: 24),
+            // Sekcja wyboru walut (obok siebie z "na" między nimi)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Dropdown z walutą źródłową
+                Expanded(
+                  child: DropdownButton<String>(
+                    value: _fromCurrency,
+                    isExpanded: true,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        _fromCurrency = newValue!;
+                      });
+                    },
+                    items: currencies
+                        .map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Center(child: Text(value)),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                // Tekst "na"
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  child: Text(
+                    'na',
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
+                  ),
+                ),
+                // Dropdown z walutą docelową
+                Expanded(
+                  child: DropdownButton<String>(
+                    value: _toCurrency,
+                    isExpanded: true,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        _toCurrency = newValue!;
+                      });
+                    },
+                    items: currencies
+                        .map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Center(child: Text(value)),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 24),
+            // Przycisk "Przelicz"
+            Center(
+              child: ElevatedButton(
+                onPressed: _convertCurrency,
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(vertical: 12, horizontal: 32),
+                  backgroundColor: Colors.amber,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: Text(
+                  'Przelicz',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
               ),
             ),
             SizedBox(height: 16),
-            // Wybór waluty bazowej
-            DropdownButton<String>(
-              value: _fromCurrency,
-              onChanged: (String? newValue) {
-                setState(() {
-                  _fromCurrency = newValue!;
-                });
-              },
-              items: currencies.map<DropdownMenuItem<String>>((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-            ),
-            SizedBox(height: 16),
-            // Wybór waluty docelowej
-            DropdownButton<String>(
-              value: _toCurrency,
-              onChanged: (String? newValue) {
-                setState(() {
-                  _toCurrency = newValue!;
-                });
-              },
-              items: currencies.map<DropdownMenuItem<String>>((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-            ),
-            SizedBox(height: 16),
-            // Przycisk "Przelicz"
-            ElevatedButton(
-              onPressed: _convertCurrency,
-              child: Text('Przelicz'),
-            ),
-            SizedBox(height: 16),
             // Wynik przeliczenia
-            Text(
-              _convertedAmount > 0
-                  ? 'Wynik: ${_convertedAmount.toStringAsFixed(2)} $_toCurrency'
-                  : 'Proszę podać kwotę',
-              style: TextStyle(color: Colors.amber, fontSize: 22),
+            Center(
+              child: Text(
+                _convertedAmount > 0
+                    ? 'Wynik: ${_convertedAmount.toStringAsFixed(2)} $_toCurrency'
+                    : 'Proszę podać kwotę',
+                style: TextStyle(color: Colors.amber, fontSize: 22),
+              ),
             ),
             SizedBox(height: 32),
             // Sekcja wybranych walut
             Text(
               'Aktualne kursy:',
-              style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 16),
             _isLoading
@@ -812,11 +910,13 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
                   final rate = _exchangeRates[currency] ?? 0.0;
                   return Card(
                     color: Colors.grey[900],
-                    margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                    margin: EdgeInsets.symmetric(
+                        vertical: 8, horizontal: 16),
                     child: ListTile(
                       title: Text(
                         '1 $currency = ${(1 / rate).toStringAsFixed(4)} PLN',
-                        style: TextStyle(color: Colors.white, fontSize: 18),
+                        style: TextStyle(
+                            color: Colors.white, fontSize: 18),
                       ),
                     ),
                   );
