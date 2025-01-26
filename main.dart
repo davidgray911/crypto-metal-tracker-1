@@ -447,6 +447,10 @@ class _MetalsScreenState extends State<MetalsScreen> {
   Map<String, double> _metalPrices = {};
   bool _isLoading = true;
 
+  final TextEditingController _gramsController = TextEditingController();
+  String _selectedMetal = 'Złoto';
+  double _calculatedValue = 0.0;
+
   @override
   void initState() {
     super.initState();
@@ -454,29 +458,25 @@ class _MetalsScreenState extends State<MetalsScreen> {
   }
 
   Future<void> _fetchMetalPrices() async {
-    const String apiKey = 'goldapi-2ir2sm6cto6n3-io'; // Twój klucz API
-    const String apiUrl = 'https://www.goldapi.io/api/XAU/USD'; // Endpoint dla złota
+    const String apiKey = 'goldapi-2ir2sm6cto6n3-io';
+    const String apiUrl = 'https://www.goldapi.io/api/XAU/USD';
 
     try {
-      // Pobieranie cen złota
       final responseGold = await http.get(
         Uri.parse(apiUrl),
         headers: {'x-access-token': apiKey, 'Content-Type': 'application/json'},
       );
 
-      // Pobieranie cen srebra
       final responseSilver = await http.get(
         Uri.parse('https://www.goldapi.io/api/XAG/USD'),
         headers: {'x-access-token': apiKey, 'Content-Type': 'application/json'},
       );
 
-      // Pobieranie cen platyny
       final responsePlatinum = await http.get(
         Uri.parse('https://www.goldapi.io/api/XPT/USD'),
         headers: {'x-access-token': apiKey, 'Content-Type': 'application/json'},
       );
 
-      // Pobieranie cen palladu
       final responsePalladium = await http.get(
         Uri.parse('https://www.goldapi.io/api/XPD/USD'),
         headers: {'x-access-token': apiKey, 'Content-Type': 'application/json'},
@@ -501,13 +501,11 @@ class _MetalsScreenState extends State<MetalsScreen> {
           _isLoading = false;
         });
       } else {
-        print('Błąd HTTP: ${responseGold.statusCode}, ${responseSilver.statusCode}');
         setState(() {
           _isLoading = false;
         });
       }
     } catch (e) {
-      print('Błąd: $e');
       setState(() {
         _isLoading = false;
       });
@@ -519,73 +517,145 @@ class _MetalsScreenState extends State<MetalsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Kurs Metali Szlachetnych za 1 oz',
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.2,
-          ),
+          'Kurs Metali Szlachetnych',
+          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
       ),
       body: _isLoading
-          ? Center(
-        child: CircularProgressIndicator(color: Colors.amber),
-      )
-          : ListView(
-        padding: EdgeInsets.all(16),
-        children: _metalPrices.entries.map((entry) {
-          return Card(
-            color: Colors.grey[900],
-            margin: EdgeInsets.symmetric(vertical: 8),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Column(
-                children: [
-                  // Metal name container
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                        vertical: 8, horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[800],
-                      borderRadius: BorderRadius.circular(12),
+          ? Center(child: CircularProgressIndicator(color: Colors.amber))
+          : Center(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Wrap(
+                      spacing: 16,
+                      runSpacing: 16,
+                      alignment: WrapAlignment.center,
+                      children: _metalPrices.entries.map((entry) {
+                        return Container(
+                          width: 120,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[900],
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black54,
+                                blurRadius: 4,
+                                offset: Offset(2, 2),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                entry.key,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              SizedBox(height: 6),
+                              Text(
+                                '\$${entry.value.toStringAsFixed(2)}',
+                                style: TextStyle(
+                                  color: Colors.amber,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
                     ),
-                    child: Text(
-                      entry.key,
+                    SizedBox(height: 24),
+                    Divider(color: Colors.grey),
+                    SizedBox(height: 16),
+                    Text(
+                      'Przelicz wartość metalu',
                       style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.amber,
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    DropdownButton<String>(
+                      value: _selectedMetal,
+                      isExpanded: true,
+                      alignment: Alignment.center,
+                      items: _metalPrices.keys.map((metal) {
+                        return DropdownMenuItem(
+                          value: metal,
+                          child: Center(child: Text(metal)),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedMetal = value!;
+                        });
+                      },
+                    ),
+                    SizedBox(height: 16),
+                    TextField(
+                      controller: _gramsController,
+                      keyboardType: TextInputType.number,
+                      textAlign: TextAlign.center,
+                      decoration: InputDecoration(
+                        labelText: 'Wprowadź ilość gramów',
+                        labelStyle: TextStyle(fontSize: 16),
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.scale),
+                        contentPadding: EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        final grams = double.tryParse(_gramsController.text) ?? 0.0;
+                        final pricePerOunce = _metalPrices[_selectedMetal] ?? 0.0;
+                        final pricePerGram = pricePerOunce / 31.1035;
+                        setState(() {
+                          _calculatedValue = grams * pricePerGram;
+                        });
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.amber,
+                        padding: EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: Text(
+                        'PRZELICZ',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      'Wartość: \$${_calculatedValue.toStringAsFixed(2)}',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                         color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
                       ),
+                      textAlign: TextAlign.center,
                     ),
-                  ),
-                  SizedBox(height: 8),
-                  // Price container
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                        vertical: 8, horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.amber,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      '\$${entry.value.toStringAsFixed(2)}',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          );
-        }).toList(),
-      ),
     );
   }
 }
