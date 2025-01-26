@@ -11,4 +11,4 @@ Aplikacja do śledzenia rynków finansowych z modułem relaksacyjnym.
 ## Jak uruchomić?
 1. Sklonuj repozytorium:
    ```bash
-   git clone https://github.com/[TwojaNazwa]/crypto-metal-tracker.git
+   git clone https://github.com/davidgray911/crypto-metal-tracker.git
