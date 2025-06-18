@@ -9,5 +9,5 @@ Aplikacja do śledzenia rynków finansowych z modułem relaksacyjnym.
 - Gra "Click Game" do redukcji stresu.
 
 ## W trakcie
-- nowoczesniejszy interfejs
-- ekran logowania
+- nowocześniejszy interfejs
+- ekrany logowania użytkownika 
