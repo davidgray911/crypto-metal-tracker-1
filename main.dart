@@ -1061,7 +1061,7 @@ class _TicTacToeScreenState extends State<TicTacToeScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 50), // Odstęp od przycisku
+            const SizedBox(height: 50), // Odstęp od przycinkach
             const Text(
               'Najlepsze wyniki:',
               style: TextStyle(
